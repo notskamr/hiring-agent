@@ -54,7 +54,10 @@ for m in ["config", "prompt", "models", "llm_utils", "pdf", "github", "evaluator
     sys.modules.pop(m, None)
 import config
 config.DEVELOPMENT_MODE = False  # no filename-keyed caching or CSV in the browser
-import score
+import logging, pymupdf, score
+# pymupdf_layout would change extraction vs. the native pipeline, so skip it quietly
+pymupdf.no_recommend_layout()
+logging.getLogger("pdf").setLevel(logging.DEBUG)  # per-section progress for the status line
 from roles import load_role
 role = load_role(job["role"])
 ev = score.main("/tmp/resume.pdf", role)

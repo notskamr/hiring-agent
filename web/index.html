@@ -134,7 +134,7 @@ worker.onmessage = ({ data: m }) => {
     $('go').disabled = !pdf;
   } else if (m.type === 'log') {
     if (!pending) $('status').textContent = m.msg;
-    else pending.last = m.msg.replace(/^.* - (INFO|WARNING|ERROR) - /, '');
+    else pending.last = m.msg.replace(/^.* - +(DEBUG|INFO|WARNING|ERROR) - /, '');
   } else {
     pending ? (m.type === 'result' ? pending.resolve(m.data) : pending.reject(new Error(m.msg)))
             : ($('status').className = 'err', $('status').textContent = 'Error: ' + m.msg);

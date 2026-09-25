@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resume Checker</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #fff; --text: #16181d; --muted: #646b78; --line: #e3e6eb;
+    --accent: #1f7a4d; --accent-soft: #e3f3ea; --warn: #b4531a; --bad: #b42318; --track: #eceff3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --card: #171a20; --text: #e8eaee; --muted: #99a0ad; --line: #272b33;
+      --accent: #4cc38a; --accent-soft: #16291f; --warn: #f0a060; --bad: #f97066; --track: #252932;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 80px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 12px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  #drop { border: 2px dashed var(--line); border-radius: 10px; padding: 32px 16px; text-align: center;
+          cursor: pointer; transition: border-color .15s, background .15s; }
+  #drop:hover, #drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  #drop strong { display: block; font-size: 16px; }
+  #drop span { color: var(--muted); font-size: 13px; }
+  .row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; align-items: end; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); flex: 1; min-width: 180px; }
+  select, button, input { font: inherit; border-radius: 8px; padding: 9px 12px; border: 1px solid var(--line);
+                   background: var(--card); color: var(--text); }
+  button { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; cursor: pointer; flex: 0 0 auto; }
+  button:disabled { opacity: .5; cursor: default; }
+  #status { margin-top: 14px; color: var(--muted); font-size: 14px; min-height: 1.5em; }
+  #status.err { color: var(--bad); }
+  .hero { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+  .ring { --p: 0; width: 132px; height: 132px; border-radius: 50%; flex: 0 0 auto; display: grid; place-items: center;
+          background: conic-gradient(var(--c, var(--accent)) calc(var(--p) * 1%), var(--track) 0); }
+  .ring div { width: 106px; height: 106px; border-radius: 50%; background: var(--card); display: grid; place-items: center; text-align: center; }
+  .ring b { font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .ring small { color: var(--muted); font-size: 12px; }
+  .hero-meta { flex: 1; min-width: 200px; }
+  .hero-meta .name { font-size: 20px; font-weight: 600; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .chip { font-size: 13px; padding: 3px 10px; border-radius: 99px; background: var(--track); font-variant-numeric: tabular-nums; }
+  .cat { padding: 14px 0; border-top: 1px solid var(--line); }
+  .cat:first-of-type { border-top: 0; padding-top: 0; }
+  .cat-head { display: flex; justify-content: space-between; font-weight: 600; }
+  .cat-head span:last-child { font-variant-numeric: tabular-nums; }
+  .bar { height: 8px; background: var(--track); border-radius: 99px; margin: 8px 0; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+  .ev { color: var(--muted); font-size: 14px; margin: 0; }
+  ul { margin: 0; padding-left: 20px; }
+  li { margin: 6px 0; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  .grid .card { margin: 0; }
+  .note { font-size: 14px; margin: 0; }
+  .note + .note { margin-top: 12px; }
+  .note b { display: block; }
+  input[type=checkbox] { width: 16px; height: 16px; padding: 0; accent-color: var(--accent); }
+  .check { flex-direction: row; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Resume Checker</h1>
+  <p class="sub">HackerRank's open-source hiring-agent rubric, scored by Gemini. Runs entirely in your browser:
+    your resume and key go only to Google (and GitHub, if your resume links a profile).</p>
+
+  <section class="card">
+    <div class="row" style="margin-top:0">
+      <label>Gemini API key <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="From aistudio.google.com/api-keys"></label>
+      <label>GitHub token (optional) <input id="gh" type="password" autocomplete="off" spellcheck="false" placeholder="Raises GitHub rate limit 60 → 5000/hr"></label>
+    </div>
+    <label class="check"><input id="remember" type="checkbox"> Remember keys on this device</label>
+  </section>
+
+  <section class="card">
+    <div id="drop" tabindex="0" role="button" aria-label="Choose a resume PDF">
+      <strong id="fname">Drop your resume PDF here</strong>
+      <span>or click to browse</span>
+    </div>
+    <input id="file" type="file" accept="application/pdf,.pdf" hidden>
+    <div class="row">
+      <label>Role <select id="role"></select></label>
+      <label>Model <select id="model"></select></label>
+      <button id="go" disabled>Score resume</button>
+    </div>
+    <div id="status" aria-live="polite"></div>
+  </section>
+
+  <div id="out" hidden>
+    <section class="card hero">
+      <div class="ring" id="ring"><div><span><b id="total"></b><br><small id="outof"></small></span></div></div>
+      <div class="hero-meta">
+        <div class="name" id="cand"></div>
+        <div class="chips" id="chips"></div>
+      </div>
+    </section>
+    <section class="card"><h2>Categories</h2><div id="cats"></div></section>
+    <section class="card"><h2>Bonus &amp; deductions</h2><div id="adj"></div></section>
+    <div class="grid">
+      <section class="card"><h2>Strengths</h2><ul id="strengths"></ul></section>
+      <section class="card"><h2>To improve</h2><ul id="improve"></ul></section>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let pdf = null;
+
+const worker = new Worker('worker.js');
+let ready = false, pending = null;
+const store = { get: k => { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
+                set: (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch {} } };
+$('key').value = store.get('gemini_key');
+$('gh').value = store.get('github_token');
+$('remember').checked = !!$('key').value;
+$('role').append(new Option('software engineering intern', 'software_engineering_intern'));
+$('status').textContent = 'Loading…';
+
+worker.onmessage = ({ data: m }) => {
+  if (m.type === 'ready') {
+    ready = true;
+    $('model').append(...m.models.map(x => new Option(x, x, false, x === 'gemini-3.1-pro-preview')));
+    $('status').textContent = 'Ready.';
+    $('go').disabled = !pdf;
+  } else if (m.type === 'log') {
+    if (!pending) $('status').textContent = m.msg;
+    else pending.last = m.msg.replace(/^.* - (INFO|WARNING|ERROR) - /, '');
+  } else {
+    pending ? (m.type === 'result' ? pending.resolve(m.data) : pending.reject(new Error(m.msg)))
+            : ($('status').className = 'err', $('status').textContent = 'Error: ' + m.msg);
+  }
+};
+
+function pick(f) {
+  if (!f) return;
+  pdf = f;
+  $('fname').textContent = f.name;
+  $('go').disabled = !ready;
+}
+$('drop').onclick = () => $('file').click();
+$('drop').onkeydown = e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), $('file').click());
+$('file').onchange = e => pick(e.target.files[0]);
+$('drop').ondragover = e => { e.preventDefault(); $('drop').classList.add('over'); };
+$('drop').ondragleave = () => $('drop').classList.remove('over');
+$('drop').ondrop = e => { e.preventDefault(); $('drop').classList.remove('over'); pick(e.dataTransfer.files[0]); };
+
+$('go').onclick = async () => {
+  const key = $('key').value.trim(), status = $('status'), t0 = Date.now();
+  if (!key) { status.className = 'err'; status.textContent = 'Enter your Gemini API key first.'; return $('key').focus(); }
+  const remember = $('remember').checked;
+  store.set('gemini_key', remember && key);
+  store.set('github_token', remember && $('gh').value.trim());
+  $('go').disabled = true;
+  status.className = '';
+  const model = $('model').value;
+  const job = new Promise((resolve, reject) => pending = { resolve, reject, last: 'Starting…' });
+  const tick = setInterval(() => status.textContent =
+    `${Math.round((Date.now() - t0) / 1000)}s · ${pending.last}`, 250);
+  try {
+    worker.postMessage({ pdf: await pdf.arrayBuffer(), key, model, role: $('role').value, github: $('gh').value.trim() });
+    render(await job);
+    status.textContent = `Done in ${Math.round((Date.now() - t0) / 1000)}s with ${model}. Scores vary between runs — try it more than once.`;
+  } catch (e) {
+    status.className = 'err';
+    status.textContent = 'Error: ' + e.message;
+  } finally {
+    clearInterval(tick);
+    pending = null;
+    $('go').disabled = false;
+  }
+};
+
+// Mirrors print_evaluation_results in score.py.
+function render({ evaluation: ev, categories, bonus_max }) {
+  let total = 0, max = 0;
+  const cats = Object.entries(ev.scores).map(([k, s]) => {
+    const got = Math.min(s.score, s.max);
+    total += got; max += s.max;
+    const c = categories[k] || { label: k, icon: '' };
+    const n = document.createElement('div');
+    n.className = 'cat';
+    n.innerHTML = '<div class="cat-head"><span></span><span></span></div><div class="bar"><i></i></div><p class="ev"></p>';
+    n.querySelector('.cat-head span').textContent = `${c.icon} ${c.label}`;
+    n.querySelector('.cat-head span:last-child').textContent = `${got} / ${s.max}`;
+    n.querySelector('i').style.width = `${(got / s.max) * 100}%`;
+    n.querySelector('.ev').textContent = s.evidence;
+    return n;
+  });
+  const bonus = ev.bonus_points?.total || 0, ded = ev.deductions?.total || 0;
+  total = Math.min(total + bonus - ded, max + bonus_max);
+
+  const pct = Math.max(0, Math.min(100, (total / max) * 100));
+  $('ring').style.setProperty('--p', pct);
+  $('ring').style.setProperty('--c', pct >= 60 ? 'var(--accent)' : pct >= 35 ? 'var(--warn)' : 'var(--bad)');
+  $('total').textContent = +total.toFixed(1);
+  $('outof').textContent = `out of ${max}`;
+  $('cand').textContent = pdf.name.replace(/\.pdf$/i, '');
+  $('chips').replaceChildren(
+    ...[`+${bonus} bonus`, `−${ded} deductions`].map(t => Object.assign(document.createElement('span'), { className: 'chip', textContent: t })));
+  $('cats').replaceChildren(...cats);
+
+  const note = (title, body) => {
+    const p = document.createElement('p');
+    p.className = 'note';
+    p.append(Object.assign(document.createElement('b'), { textContent: title }), body || '—');
+    return p;
+  };
+  $('adj').replaceChildren(
+    note(`Bonus: +${bonus} (max ${bonus_max})`, ev.bonus_points?.breakdown),
+    note(`Deductions: −${ded}`, ev.deductions?.reasons));
+
+  const list = (id, items) => $(id).replaceChildren(...(items || []).map(t => Object.assign(document.createElement('li'), { textContent: t })));
+  list('strengths', ev.key_strengths);
+  list('improve', ev.areas_for_improvement);
+  $('out').hidden = false;
+}
+</script>
+</body>
+</html>

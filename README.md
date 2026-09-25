@@ -36,6 +36,16 @@
 
 ---
 
+## Run in your browser (BYOK)
+
+`web/` runs this exact pipeline client side: Pyodide (Python on WebAssembly) executes the repo's Python unchanged, and you bring your own Gemini API key. Your resume and key go only to Google (and GitHub, if the resume links a profile).
+
+- Hosted: GitHub Pages at `/web/` on this fork
+- Locally: `python3 -m http.server`, then open http://localhost:8000/web/
+- CLI with Gemini: put `GEMINI_API_KEY` in `.env`, then `./check.sh resume.pdf`
+
+---
+
 ## Context and intent
 
 This project got a lot of attention recently, and some of the discussion surfaced misconceptions worth addressing directly.
